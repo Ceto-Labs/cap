@@ -3,7 +3,7 @@ use certified_vars::{
     hashtree::{fork, fork_hash},
     AsHashTree, HashTree, Seq,
 };
-use ic_kit::candid::{candid_method, export_service, CandidType};
+use ic_kit::candid::{candid_method, export_service, CandidType, Nat};
 use ic_kit::ic;
 use serde::{Deserialize, Serialize};
 
@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 use cap_common::*;
 use ic_cdk::export::Principal;
 use ic_kit::macros::*;
+use ic_cdk::api::canister_balance128;
+use ic_kit::ic::{msg_cycles_available, msg_cycles_accept};
 
 mod installer;
 mod plug;
@@ -155,6 +157,18 @@ fn git_commit_hash() -> String {
     compile_time_run::run_command_str!("git", "rev-parse", "HEAD").into()
 }
 
+#[query(name = "wallet_balance")]
+#[candid_method(query, rename = "wallet_balance")]
+fn wallet_balance() -> Nat {
+    Nat::from(canister_balance128())
+}
+
+#[candid_method(update)]
+#[update]
+async fn wallet_receive() {
+    let avaiable: u64 = msg_cycles_available();
+    msg_cycles_accept(avaiable);
+}
 #[query(name = "__get_candid_interface_tmp_hack")]
 fn export_candid() -> String {
     export_service!();
